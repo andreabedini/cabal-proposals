@@ -242,7 +242,7 @@ Below are parts of the proposed API, and some example usages of it.
 -- | Build a @[FieldLine Position]@ modification function given a function @a -> a@, parsed as @b@.
 modifyValueAtomAla
   :: forall (b :: Type) (a :: Type)
-   . ( Newtype b a
+   . ( Coercible b a
      , Parsec b
      , Pretty b
      )
@@ -253,7 +253,7 @@ modifyValueAtomAla = {- Implementation of the algorithm for single value. -}
 -- | Build a @[FieldLine Position]@ modification function given a function @a -> Maybe a@, parsed as @List sep b a@.
 modifyValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
@@ -263,7 +263,7 @@ modifyValueList = {- Implementation of the extended algorithm for multiple value
 
 addValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
@@ -274,7 +274,7 @@ addValueList = {- Parse and use the source location to insert a value at desired
 
 removeValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
@@ -412,6 +412,9 @@ escape hatch, however we provide validation functions to catch problems.
 
 Below is an exhaustive list of the changes we tried in chronological
 order since september 2025 and what I learned from these attempts.
+
+Note that Cabal has been updated to use `Coerce` from `Newtype`, but the
+difficulties described by the following sections are roughly the same.
 
 - #(
     references.trivia-tree.override-name
