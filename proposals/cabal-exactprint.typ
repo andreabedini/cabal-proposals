@@ -278,7 +278,7 @@ removeValueList
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
-  -> (a -> Bool)
+  => (a -> Bool)
   -> ([FieldLine Position] -> [FieldLine Position])
 removeValueList = {- Parse, if the predicate is met, remove the value from the list. -}
 ```
@@ -299,7 +299,7 @@ Example: modify the bound a dependency within some field lines, can be generaliz
 ```haskell
 setBaseVersionTo :: Version -> ([FieldLine Position] -> [FieldLine Position])
 setBaseVersionTo targetVersion = modifyValueList @CommaVSep @Identity @Dependency $ \case
-  (Depedency pname _ libs) | pname == mkPackageName "base" -> Just (Depedency pname targetVersion libs)
+  (Dependency pname _ libs) | pname == mkPackageName "base" -> Just (Dependency pname targetVersion libs)
   _ -> Nothing
 ```
 
@@ -313,7 +313,7 @@ build-depends:
 Example: append a new dependency, can be generalized to cabal add.
 ```haskell
 addNewDependency :: Dependency -> ([FieldLine Position] -> [FieldLine Position])
-addNewDependency = addValueList @CommaVSep @Identity @Dependency Prepend
+addNewDependency = addValueList @CommaVSep @Identity @Dependency Append
 ```
 
 ```cabal
@@ -329,7 +329,7 @@ Example: remove a dependency
 removeDependency
   :: (Dependency -> Bool)
   -> ([FieldLine Position] -> [FieldLine Position])
-removeDependency = removeValueList @CommaVSep @Identity @Depedency
+removeDependency = removeValueList @CommaVSep @Identity @Dependency
 ```
 
 ```cabal
