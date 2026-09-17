@@ -191,7 +191,7 @@ Below are parts of the proposed API, and some example usages of it.
 -- | Build a @[FieldLine Position]@ modification function given a function @a -> a@, parsed as @b@.
 modifyValueAtomAla
   :: forall (b :: Type) (a :: Type)
-   . ( Newtype b a
+   . ( Coercible b a
      , Parsec b
      , Pretty b
      )
@@ -202,7 +202,7 @@ modifyValueAtomAla = {- Implementation of the algorithm for single value. -}
 -- | Build a @[FieldLine Position]@ modification function given a function @a -> Maybe a@, parsed as @List sep b a@.
 modifyValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
@@ -212,7 +212,7 @@ modifyValueList = {- Implementation of the extended algorithm for multiple value
 
 addValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
@@ -223,11 +223,11 @@ addValueList = {- Parse and use the source location to insert a value at desired
 
 removeValueList
   :: forall (sep :: Type) (b :: Type) (a :: Type)
-   . ( Newtype (List sep b (Located a)) (Located a)
+   . ( Coercible b a
      , Parsec (List sep b (Located a))
      , Pretty (List sep b (Located a))
      )
-  -> (a -> Bool)
+  => (a -> Bool)
   -> ([FieldLine Position] -> [FieldLine Position])
 removeValueList = {- Parse, if the predicate is met, remove the value from the list. -}
 ```
@@ -249,7 +249,7 @@ generalized to cabal gen-bounds.
 ``` haskell
 setBaseVersionTo :: Version -> ([FieldLine Position] -> [FieldLine Position])
 setBaseVersionTo targetVersion = modifyValueList @CommaVSep @Identity @Dependency $ \case
-  (Depedency pname _ libs) | pname == mkPackageName "base" -> Just (Depedency pname targetVersion libs)
+  (Dependency pname _ libs) | pname == mkPackageName "base" -> Just (Dependency pname targetVersion libs)
   _ -> Nothing
 ```
 
@@ -264,7 +264,7 @@ Example: append a new dependency, can be generalized to cabal add.
 
 ``` haskell
 addNewDependency :: Dependency -> ([FieldLine Position] -> [FieldLine Position])
-addNewDependency = addValueList @CommaVSep @Identity @Dependency Prepend
+addNewDependency = addValueList @CommaVSep @Identity @Dependency Append
 ```
 
 ``` cabal
@@ -281,7 +281,7 @@ Example: remove a dependency
 removeDependency
   :: (Dependency -> Bool)
   -> ([FieldLine Position] -> [FieldLine Position])
-removeDependency = removeValueList @CommaVSep @Identity @Depedency
+removeDependency = removeValueList @CommaVSep @Identity @Dependency
 ```
 
 ``` cabal
@@ -363,6 +363,9 @@ problems.
 
 Below is an exhaustive list of the changes we tried in chronological
 order since september 2025 and what I learned from these attempts.
+
+Note that Cabal has been updated to use `Coerce` from `Newtype`, but the
+difficulties described by the following sections are roughly the same.
 
 - [Trivia Tree #11425 (proof of
   concept)](https://github.com/haskell/cabal/pull/11425) implements a
