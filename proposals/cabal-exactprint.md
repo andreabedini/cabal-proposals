@@ -18,20 +18,20 @@ modification/addition/removal of fields, without mangling the format,
 structure or comments of users files.
 
 Furthermore it makes cabal authoritative on the package description
-format, allowing downstream users to use the provided printing functions
-and get a stability guarantee.
+format, allowing downstream users to use the provided parsing and
+printing functions and get a stability guarantee.
 
 We define the parse-print idempotency to be `print . parse == id`, which
 reads "parsing then printing is as if we've done nothing". We only focus
 on ensuring this property to hold for valid package descriptions, and we
-don't consider the braces syntax in this work.
+do not consider the braces syntax in this work.
 
 ## Motivation
 
 Cabal builds packages by following stanzas written in [package
 descriptions](https://cabal.readthedocs.io/en/stable/cabal-package-description-file.html#package-descriptions).
 These files have the extension `.cabal`. Cabal is currently unable to
-modify such files loselessly.
+modify such files losslessly.
 
 Here are some of the symptoms manifesting in different ways through out
 the Cabal CLI:
@@ -40,8 +40,8 @@ the Cabal CLI:
 
   It should fix the indentation of your file and canonicalize some
   fields. Instead, it also drops all your comments, all the imports are
-  merged in-place, elif in a conditional will be desugared to a nested
-  if in an else, etc.
+  merged in-place, `elif` in a conditional will be desugared to a nested
+  `if` in an `else`, etc.
 
 - `cabal add`
 
@@ -119,9 +119,10 @@ the `cabal-version` field while having all the position validation
 already dealt with behind the scenes.
 
 To implement this we use existing building blocks. `Pretty` and `Parsec`
-instance already exist. Each field in a package description is
-represented by a field name in association with some field lines. Upon
-modification, we proceed with the following steps:
+instance already exist. `Located` wrapper type is provided to parse some
+data with its location attached to it. Each field in a package
+description is represented by a field name in association with some
+field lines. Upon modification, we proceed with the following steps:
 
 1.  Should the field lines be non empty, join them into a single field
     line `fl` with indentation and newlines.
@@ -337,7 +338,7 @@ appendDependency =
   ModifySection
     -- Focus on a section.
     (hasSectionName "library" <> hasSectionArgument [])
-    -- Don't transform the section name nor arguments.
+    -- Keep section name and arguments identical.
     -- This mechanism can be useful to implement transformation on if conditions.
     id
     -- Transform nested fields or sections.
@@ -355,7 +356,7 @@ paths down the tree of fields. At the leaf (in the above example,
 `[FieldLine Position]` by providing `addValueList`.
 
 We strive to make the API flexible and will expose ways to modify
-`[Field Position]` directly. We don't try to guarantee the correctness
+`[Field Position]` directly. We do not try to guarantee the correctness
 of this escape hatch, however we provide validation functions to catch
 problems.
 
@@ -540,11 +541,11 @@ and
 [after](https://github.com/leana8959/cabal/blob/a91c3fe5d5f0f01c350cc938a8d0c8460d452031/Cabal-syntax/src/Distribution/PackageDescription/FieldGrammar.hs#L552-L590).
 
 A notable problem is we lose the shape of the original
-`[Field Position]`. Components of `GenericPackageDescription` don't know
-the section they belong to, and each data don't know which `FieldLine`
-of which `Field` they were originally parsed from. This was previously
-not known because the limitation of trivia tree didn't allow us to go
-this far.
+`[Field Position]`. Components of `GenericPackageDescription` do not
+know the section they belong to, and each data does not know which
+`FieldLine` of which `Field` they were originally parsed from. This was
+previously not known because the limitation of trivia tree didn't allow
+us to go this far.
 
 - Regarding losing the shape of the sections:
 
@@ -664,7 +665,7 @@ fields we support.
 ## Backwards Compatibility / Migration
 
 We are extending the parser and implementing a modification framework.
-The changes are local to the parser, we don't foresee any
+The changes are local to the parser, we do not foresee any
 backwards-compatibility issues.
 
 ## Interested parties
